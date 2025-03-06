@@ -1,7 +1,8 @@
 import User from "./user.model.js"
 import { encrypt } from "../../utils/encrypt.js"
-
-
+import { validatePassword } from '../../middlewares/validate.password.js'
+import { checkPassword } from '../../utils/encrypt.js'; // Importa checkPassword
+ 
 export const getAll = async(req,res)=>{
     try {
         const {limit = 20, skip=0} = req.query
@@ -30,6 +31,7 @@ export const getAll = async(req,res)=>{
     }
 }
 
+// Método para actualizar el perfil del usuario
 export const updateUserProfile = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -40,10 +42,29 @@ export const updateUserProfile = async (req, res) => {
             return res.status(404).send({ message: 'User not found' });
         }
 
-      
-        delete updates.role;
-        delete updates.password;
+        // Verificar si el usuario que realiza la acción es ADMIN o CLIENTE
+        if (req.user.role === 'ADMIN') {
+            // Si es admin, eliminamos el rol y el estado de la actualización
+            if (updates.status) {
+                return res.status(400).send({ message: "Admins cannot edit 'status' field" });
+            }
+            if (updates.role) {
+                return res.status(400).send({ message: "Admins cannot edit 'role' field" });
+            }
+        } else if (req.user.role === 'CLIENT') {
+            // Si es cliente, eliminamos los campos sensibles
+            if (updates.email) {
+                return res.status(400).send({ message: "Clients cannot edit 'email' field" });
+            }
+            if (updates.status) {
+                return res.status(400).send({ message: "Clients cannot edit 'status' field" });
+            }
+            if (updates.role) {
+                return res.status(400).send({ message: "Clients cannot edit 'role' field" });
+            }
+        }
 
+        // Realizar la actualización
         const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true });
 
         return res.send({ message: 'Profile updated successfully', updatedUser });
@@ -51,17 +72,24 @@ export const updateUserProfile = async (req, res) => {
         console.error(err);
         return res.status(500).send({ message: 'Error updating user profile', err });
     }
-}
+};
+
 
 
 
 export const deleteUserProfile = async (req, res) => {
     try {
         const { userId } = req.params;
+        const { currentPassword } = req.body;
 
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).send({ message: 'User not found' });
+        }
+
+        const isMatch = await checkPassword(user.password, currentPassword);
+        if (!isMatch) {
+            return res.status(401).send({ message: 'Incorrect password' });
         }
 
         await User.findByIdAndDelete(userId);

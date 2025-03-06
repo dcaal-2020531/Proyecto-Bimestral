@@ -44,6 +44,9 @@ const userSchema = new Schema({
     status: {
         type: Boolean,
         default: true
+    },
+    Preferences:{
+        type:String
     }
 }
 )

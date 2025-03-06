@@ -93,3 +93,70 @@ export const deleteProduct = async (req, res) => {
         return res.status(500).send({ message: 'Error deleting Product', err });
     }
 }
+
+
+export const outOfStock = async (req, res) => {
+    try {
+        const products = await Product.find({ stock: 0 });
+
+        return res.send(products);
+        
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ err });
+    }
+}
+
+export const getByName = async (req, res) => {
+    try {
+        const { name } = req.params;
+        const product = await Product.findOne({ name });
+
+        if (!product) {
+            return res.status(404).send({ success: false, message: 'Product not found' });
+        }
+
+        return res.send({ success: true, message: 'Product found', product });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ success: false, message: 'Error retrieving product', err });
+    }
+}
+
+
+export const orderBySales = async (req, res) => {
+    try {
+        const products = await Product.find()
+            .sort({ sells: -1 }); 
+        if (products.length === 0) {
+            return res.status(404).send({ success: false, message: 'products not found' });
+        }
+
+        return res.send({
+            success: true,
+            message: 'products sorted by experience (least to most):',
+            products
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ success: false, message: 'Error sorting the list', err });
+    }
+}
+
+
+export const getByCategory = async (req, res) => {
+    try {
+        const { category } = req.params;
+        const product = await Product.find({ category });
+
+        if (!product) {
+            return res.status(404).send({ success: false, message: 'Product not found' });
+        }
+
+        return res.send({ success: true, message: 'Product found', product });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ success: false, message: 'Error retrieving product', err });
+    }
+}
+

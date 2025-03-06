@@ -28,10 +28,10 @@ const productSchema = new Schema({
         ref: 'Category',
         required: [true, 'Category is required']
     },
-    status: {
-        type: Boolean,
-        default: true
-    }
+    sells:{
+        type: Number,
+        required:true},
+
 });
 
 productSchema.methods.toJSON = function () {

@@ -1,5 +1,5 @@
 import Category from "./category.model.js";
-
+import Product from "../product/product.model.js"
 
 export const save = async(req, res) => {
     try {
@@ -82,14 +82,23 @@ export const deleteCategory = async (req, res) => {
 
         const category = await Category.findById(categoryId);
         if (!category) {
-            return res.status(404).send({ message: 'Category not found' });
+            return res.status(404).send({ message: 'Category not found' })
         }
 
-        await Category.findByIdAndDelete(categoryId);
+        const defaultCategory = await Category.findOne({ name: 'default' })
+        if (!defaultCategory) {
+            return res.status(404).send({ message: 'default category not found' });
+        }
 
-        return res.send({ message: 'Category deleted successfully' });
+        const product = await Product.find({ category: categoryId });
+
+        await Product.updateMany({ category: categoryId }, { $set: { category: defaultCategory._id } })
+
+        await Category.findByIdAndDelete(categoryId)
+
+        return res.send({ message: 'Category deleted and Product reassigned successfully' });
     } catch (err) {
         console.error(err);
-        return res.status(500).send({ message: 'Error deleting Category', err });
+        return res.status(500).send({ message: 'Error deleting category and updating Product', err })
     }
 }
